@@ -15,7 +15,9 @@
 package object
 
 import (
+	"context"
 	"fmt"
+	"github.com/casdoor/casdoor/lunan"
 	"regexp"
 
 	"github.com/casdoor/casdoor/cred"
@@ -149,8 +151,9 @@ func checkLdapUserPassword(user *User, password string) (*User, string) {
 			return nil, "Error: multiple accounts with same uid, please check your ldap server"
 		}
 
-		dn := searchResult.Entries[0].DN
-		if err := conn.Conn.Bind(dn, password); err == nil {
+		uid := searchResult.Entries[0].GetAttributeValue("uid")
+		// todo: 此处修改为Lunan专用验证方案
+		if err := lunan.Auth(context.Background(), uid, password); err == nil {
 			ldapLoginSuccess = true
 			break
 		}
