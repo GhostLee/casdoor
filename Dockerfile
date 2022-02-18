@@ -12,7 +12,7 @@ RUN yarn install && yarn run build
 
 
 FROM debian:latest AS ALLINONEbullseye
-RUN apt update
+RUN sed -i "s@http://\(deb\|security\).debian.org@https://mirrors.aliyun.com@g" /etc/apt/sources.list && apt update
 RUN apt install -y ca-certificates && update-ca-certificates
 RUN apt install -y mariadb-server mariadb-client && mkdir -p web/build && chmod 777 /tmp
 LABEL MAINTAINER="https://casdoor.org/"
