@@ -14,7 +14,7 @@ import (
 	"sync"
 )
 
-var authEndpoint = "http://localhost/api/auth"
+var authEndpoint = ""
 var client = http.DefaultClient
 var pool sync.Pool
 
@@ -27,8 +27,11 @@ func init() {
 	}
 	authEndpoint = os.Getenv("LUNAN_AUTH_ENDPOINT")
 	if authEndpoint == "" {
-		panic("请输入公司认证API, 否则无法使用密码验证功能")
+		log.Println("若想使用公司密码认证服务, 请输入公司认证API, 否则无法使用密码认证功能")
 	}
+}
+func AuthEnabled() bool {
+	return authEndpoint == ""
 }
 
 type AuthResponse struct {
