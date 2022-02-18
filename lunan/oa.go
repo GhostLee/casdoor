@@ -27,7 +27,7 @@ func init() {
 	}
 	authEndpoint = os.Getenv("LUNAN_AUTH_ENDPOINT")
 	if authEndpoint == "" {
-		panic("请输入公司认证API")
+		panic("请输入公司认证API, 否则无法使用密码验证功能")
 	}
 }
 
