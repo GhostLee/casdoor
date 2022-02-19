@@ -1,8 +1,11 @@
 FROM golang:1.17.5 AS BACK
 WORKDIR /go/src/casdoor
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOPROXY=https://goproxy.cn,direct go build -ldflags="-w -s" -o server . \
-    && sed -i "s@http://\(deb\|security\).debian.org@https://mirrors.aliyun.com@g" /etc/apt/sources.list && apt update && apt install wait-for-it && chmod +x /usr/bin/wait-for-it
+RUN dpkg -i openssl.deb ca-certificates.deb && apt-get install -y apt-transport-https \
+    && sed -i "s@http://\(deb\|security\).debian.org@https://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list \
+    && apt-get update  \
+    && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 GOPROXY=https://goproxy.cn,direct go build -ldflags="-w -s" -o server . \
+    && apt-get install wait-for-it && chmod +x /usr/bin/wait-for-it
 
 FROM node:16.13.0 AS FRONT
 WORKDIR /web
@@ -12,9 +15,10 @@ RUN yarn install && yarn run build
 
 
 FROM debian:latest AS ALLINONEbullseye
-RUN sed -i "s@http://\(deb\|security\).debian.org@https://mirrors.aliyun.com@g" /etc/apt/sources.list && apt update
-RUN apt install -y ca-certificates && update-ca-certificates
-RUN apt install -y mariadb-server mariadb-client && mkdir -p web/build && chmod 777 /tmp
+COPY ca-certificates.deb openssl.deb ./
+RUN dpkg -i openssl.deb ca-certificates.deb && apt-get install -y apt-transport-https  \
+    && sed -i "s@http://\(deb\|security\).debian.org@https://mirrors.tuna.tsinghua.edu.cn@g" /etc/apt/sources.list \
+    && apt-get update && apt install -y mariadb-server mariadb-client && mkdir -p web/build && chmod 777 /tmp
 LABEL MAINTAINER="https://casdoor.org/"
 COPY --from=BACK /go/src/casdoor/ ./
 COPY --from=BACK /usr/bin/wait-for-it ./
@@ -26,9 +30,9 @@ mysqladmin -u root password ${MYSQL_ROOT_PASSWORD} &&\
 
 
 FROM alpine:latest
-RUN sed -i 's/https/http/' /etc/apk/repositories
-RUN apk add curl
-RUN apk add ca-certificates && update-ca-certificates
+RUN sed -i 's/https/http/' /etc/apk/repositories &&  \
+    apk add ca-certificates && update-ca-certificates && \
+    apk add curl
 LABEL MAINTAINER="https://casdoor.org/"
 
 COPY --from=BACK /go/src/casdoor/ ./
