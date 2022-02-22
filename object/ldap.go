@@ -156,10 +156,18 @@ func GetLdapConn(host string, port int, adminUser string, adminPasswd string) (*
 
 func (l *ldapConn) GetLdapUsers(baseDn string) ([]ldapUser, error) {
 	// fix: 支持ADSI账户
-	SearchFilter := "(|(objectClass=posixAccount)(objectClass=user))"
-	SearchAttributes := []string{"uidNumber", "uid", "cn", "gidNumber", "entryUUID", "mail", "email",
-		"emailAddress", "telephoneNumber", "mobile", "mobileTelephoneNumber", "registeredAddress", "postalAddress",
+
+	//SearchFilter := "(objectClass=posixAccount)"
+	//SearchAttributes := []string{"uidNumber", "uid", "cn", "gidNumber", "entryUUID", "mail", "email",
+	//	"emailAddress", "telephoneNumber", "mobile", "mobileTelephoneNumber", "registeredAddress", "postalAddress"}
+
+	SearchFilter := "(objectClass=user)"
+	SearchAttributes := []string{"cn",
+		"mail", "email", "emailAddress",
+		"telephoneNumber", "mobile", "mobileTelephoneNumber",
+		"registeredAddress", "postalAddress",
 		"objectGUID", "objectSid", "name",
+		"department", "departmentNumber",
 	}
 
 	searchReq := goldap.NewSearchRequest(baseDn,
@@ -180,31 +188,15 @@ func (l *ldapConn) GetLdapUsers(baseDn string) ([]ldapUser, error) {
 		var ldapUserItem ldapUser
 		for _, attribute := range entry.Attributes {
 			switch attribute.Name {
-			case "uidNumber":
+			case "objectGUID":
 				ldapUserItem.UidNumber = attribute.Values[0]
-			case "uid":
-				if ldapUserItem.Uid != "" {
-					continue
-				}
-				ldapUserItem.Uid = attribute.Values[0]
 			case "name":
-				if ldapUserItem.Uid != "" {
-					continue
-				}
 				ldapUserItem.Uid = attribute.Values[0]
 			case "cn":
 				ldapUserItem.Cn = attribute.Values[0]
-			case "gidNumber":
+			case "departmentNumber":
 				ldapUserItem.GidNumber = attribute.Values[0]
-			case "objectGUID":
-				if ldapUserItem.Uuid != "" {
-					continue
-				}
-				ldapUserItem.Uuid = attribute.Values[0]
-			case "entryUUID":
-				if ldapUserItem.Uuid != "" {
-					continue
-				}
+			case "objectSid":
 				ldapUserItem.Uuid = attribute.Values[0]
 			case "mail":
 				ldapUserItem.Mail = attribute.Values[0]
