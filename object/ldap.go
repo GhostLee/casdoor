@@ -155,9 +155,12 @@ func GetLdapConn(host string, port int, adminUser string, adminPasswd string) (*
 //}
 
 func (l *ldapConn) GetLdapUsers(baseDn string) ([]ldapUser, error) {
-	SearchFilter := "(objectClass=posixAccount)"
+	// fix: 支持ADSI账户
+	SearchFilter := "(|(objectClass=posixAccount)(objectClass=user))"
 	SearchAttributes := []string{"uidNumber", "uid", "cn", "gidNumber", "entryUUID", "mail", "email",
-		"emailAddress", "telephoneNumber", "mobile", "mobileTelephoneNumber", "registeredAddress", "postalAddress"}
+		"emailAddress", "telephoneNumber", "mobile", "mobileTelephoneNumber", "registeredAddress", "postalAddress",
+		"objectGUID", "objectSid",
+	}
 
 	searchReq := goldap.NewSearchRequest(baseDn,
 		goldap.ScopeWholeSubtree, goldap.NeverDerefAliases, 0, 0, false,
@@ -185,6 +188,8 @@ func (l *ldapConn) GetLdapUsers(baseDn string) ([]ldapUser, error) {
 				ldapUserItem.Cn = attribute.Values[0]
 			case "gidNumber":
 				ldapUserItem.GidNumber = attribute.Values[0]
+			case "objectGUID":
+				ldapUserItem.Uuid = attribute.Values[0]
 			case "entryUUID":
 				ldapUserItem.Uuid = attribute.Values[0]
 			case "mail":

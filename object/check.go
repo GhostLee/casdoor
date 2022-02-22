@@ -152,7 +152,6 @@ func checkLdapUserPassword(user *User, password string) (*User, string) {
 		}
 		if lunan.AuthEnabled() {
 			uid := searchResult.Entries[0].GetAttributeValue("uid")
-			// todo: 此处修改为Lunan专用验证方案
 			if err := lunan.Auth(context.Background(), uid, password); err == nil {
 				ldapLoginSuccess = true
 				break
