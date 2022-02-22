@@ -159,7 +159,7 @@ func (l *ldapConn) GetLdapUsers(baseDn string) ([]ldapUser, error) {
 	SearchFilter := "(|(objectClass=posixAccount)(objectClass=user))"
 	SearchAttributes := []string{"uidNumber", "uid", "cn", "gidNumber", "entryUUID", "mail", "email",
 		"emailAddress", "telephoneNumber", "mobile", "mobileTelephoneNumber", "registeredAddress", "postalAddress",
-		"objectGUID", "objectSid",
+		"objectGUID", "objectSid", "name",
 	}
 
 	searchReq := goldap.NewSearchRequest(baseDn,
@@ -183,14 +183,28 @@ func (l *ldapConn) GetLdapUsers(baseDn string) ([]ldapUser, error) {
 			case "uidNumber":
 				ldapUserItem.UidNumber = attribute.Values[0]
 			case "uid":
+				if ldapUserItem.Uid != "" {
+					continue
+				}
+				ldapUserItem.Uid = attribute.Values[0]
+			case "name":
+				if ldapUserItem.Uid != "" {
+					continue
+				}
 				ldapUserItem.Uid = attribute.Values[0]
 			case "cn":
 				ldapUserItem.Cn = attribute.Values[0]
 			case "gidNumber":
 				ldapUserItem.GidNumber = attribute.Values[0]
 			case "objectGUID":
+				if ldapUserItem.Uuid != "" {
+					continue
+				}
 				ldapUserItem.Uuid = attribute.Values[0]
 			case "entryUUID":
+				if ldapUserItem.Uuid != "" {
+					continue
+				}
 				ldapUserItem.Uuid = attribute.Values[0]
 			case "mail":
 				ldapUserItem.Mail = attribute.Values[0]
