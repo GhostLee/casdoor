@@ -16,10 +16,12 @@ package controllers
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"github.com/astaxie/beego/utils/pagination"
 	"github.com/casdoor/casdoor/object"
 	"github.com/casdoor/casdoor/util"
+	"github.com/go-pay/gopay/alipay"
 )
 
 // GetPayments
@@ -113,4 +115,27 @@ func (c *ApiController) DeletePayment() {
 
 	c.Data["json"] = wrapActionResponse(object.DeletePayment(&payment))
 	c.ServeJSON()
+}
+
+// @Title NotifyPayment
+// @Tag Payment API
+// @Description notify payment
+// @Param   body    body   object.Payment  true        "The details of the payment"
+// @Success 200 {object} controllers.Response The Response object
+// @router /notify-payment [post]
+func (c *ApiController) NotifyPayment() {
+	bm, err := alipay.ParseNotifyToBodyMap(c.Ctx.Request)
+	if err != nil {
+		panic(err)
+	}
+
+	ok := object.NotifyPayment(bm)
+	if ok {
+		_, err = c.Ctx.ResponseWriter.Write([]byte("success"))
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		panic(fmt.Errorf("NotifyPayment() failed: %v", ok))
+	}
 }

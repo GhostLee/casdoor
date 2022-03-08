@@ -43,11 +43,15 @@ import SyncerListPage from "./SyncerListPage";
 import SyncerEditPage from "./SyncerEditPage";
 import CertListPage from "./CertListPage";
 import CertEditPage from "./CertEditPage";
+import ProductListPage from "./ProductListPage";
+import ProductEditPage from "./ProductEditPage";
+import ProductBuyPage from "./ProductBuyPage";
 import PaymentListPage from "./PaymentListPage";
 import PaymentEditPage from "./PaymentEditPage";
 import AccountPage from "./account/AccountPage";
 import HomePage from "./basic/HomePage";
 import CustomGithubCorner from "./CustomGithubCorner";
+import * as Conf from "./Conf";
 
 import * as Auth from "./auth/Auth";
 import SignupPage from "./auth/SignupPage";
@@ -128,6 +132,8 @@ class App extends Component {
       this.setState({ selectedMenuKey: '/syncers' });
     } else if (uri.includes('/certs')) {
       this.setState({ selectedMenuKey: '/certs' });
+    } else if (uri.includes('/products')) {
+      this.setState({ selectedMenuKey: '/products' });
     } else if (uri.includes('/payments')) {
       this.setState({ selectedMenuKey: '/payments' });
     } else if (uri.includes('/signup')) {
@@ -141,16 +147,14 @@ class App extends Component {
     }
   }
 
-  getAccessTokenParam() {
+  getAccessTokenParam(params) {
     // "/page?access_token=123"
-    const params = new URLSearchParams(this.props.location.search);
     const accessToken = params.get("access_token");
     return accessToken === null ? "" : `?accessToken=${accessToken}`;
   }
 
-  getCredentialParams() {
+  getCredentialParams(params) {
     // "/page?username=abc&password=123"
-    const params = new URLSearchParams(this.props.location.search);
     if (params.get("username") === null || params.get("password") === null) {
       return "";
     }
@@ -158,8 +162,17 @@ class App extends Component {
   }
 
   getUrlWithoutQuery() {
-    // eslint-disable-next-line no-restricted-globals
-    return location.toString().replace(location.search, "");
+    return window.location.toString().replace(window.location.search, "");
+  }
+
+  getLanguageParam(params) {
+    // "/page?language=en"
+    const language = params.get("language");
+    if (language !== null) {
+      Setting.setLanguage(language);
+      return `language=${language}`;
+    }
+    return "";
   }
 
   setLanguage(account) {
@@ -170,13 +183,23 @@ class App extends Component {
   }
 
   getAccount() {
-    let query = this.getAccessTokenParam();
+    const params = new URLSearchParams(this.props.location.search);
+
+    let query = this.getAccessTokenParam(params);
     if (query === "") {
-      query = this.getCredentialParams();
+      query = this.getCredentialParams(params);
     }
+
+    const query2 = this.getLanguageParam(params);
+    if (query2 !== "") {
+      const url = window.location.toString().replace(new RegExp(`[?&]${query2}`), "");
+      window.history.replaceState({}, document.title, url);
+    }
+
     if (query !== "") {
       window.history.replaceState({}, document.title, this.getUrlWithoutQuery());
     }
+
     AuthBackend.getAccount(query)
       .then((res) => {
         let account = null;
@@ -412,13 +435,24 @@ class App extends Component {
           </Link>
         </Menu.Item>
       );
-      res.push(
-        <Menu.Item key="/payments">
-          <Link to="/payments">
-            {i18next.t("general:Payments")}
-          </Link>
-        </Menu.Item>
-      );
+
+      if (Conf.EnableExtraPages) {
+        res.push(
+          <Menu.Item key="/products">
+            <Link to="/products">
+              {i18next.t("general:Products")}
+            </Link>
+          </Menu.Item>
+        );
+        res.push(
+          <Menu.Item key="/payments">
+            <Link to="/payments">
+              {i18next.t("general:Payments")}
+            </Link>
+          </Menu.Item>
+        );
+      }
+
       res.push(
         <Menu.Item key="/swagger">
           <a target="_blank" rel="noreferrer" href={Setting.isLocalhost() ? `${Setting.ServerUrl}/swagger` : "/swagger"}>
@@ -490,6 +524,9 @@ class App extends Component {
           <Route exact path="/syncers/:syncerName" render={(props) => this.renderLoginIfNotLoggedIn(<SyncerEditPage account={this.state.account} {...props} />)}/>
           <Route exact path="/certs" render={(props) => this.renderLoginIfNotLoggedIn(<CertListPage account={this.state.account} {...props} />)}/>
           <Route exact path="/certs/:certName" render={(props) => this.renderLoginIfNotLoggedIn(<CertEditPage account={this.state.account} {...props} />)}/>
+          <Route exact path="/products" render={(props) => this.renderLoginIfNotLoggedIn(<ProductListPage account={this.state.account} {...props} />)}/>
+          <Route exact path="/products/:productName" render={(props) => this.renderLoginIfNotLoggedIn(<ProductEditPage account={this.state.account} {...props} />)}/>
+          <Route exact path="/products/:productName/buy" render={(props) => this.renderLoginIfNotLoggedIn(<ProductBuyPage account={this.state.account} {...props} />)}/>
           <Route exact path="/payments" render={(props) => this.renderLoginIfNotLoggedIn(<PaymentListPage account={this.state.account} {...props} />)}/>
           <Route exact path="/payments/:paymentName" render={(props) => this.renderLoginIfNotLoggedIn(<PaymentEditPage account={this.state.account} {...props} />)}/>
           <Route exact path="/records" render={(props) => this.renderLoginIfNotLoggedIn(<RecordListPage account={this.state.account} {...props} />)}/>

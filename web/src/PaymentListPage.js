@@ -14,7 +14,7 @@
 
 import React from "react";
 import {Link} from "react-router-dom";
-import {Button, Popconfirm, Switch, Table} from 'antd';
+import {Button, Popconfirm, Table} from 'antd';
 import moment from "moment";
 import * as Setting from "./Setting";
 import * as PaymentBackend from "./backend/PaymentBackend";
@@ -34,8 +34,9 @@ class PaymentListPage extends BaseListPage {
       type: "PayPal",
       organization: "built-in",
       user: "admin",
-      good: "A notebook computer",
-      amount: "300",
+      productId: "computer-1",
+      productName: "A notebook computer",
+      price: 300.00,
       currency: "USD",
       state: "Paid",
     }
@@ -45,8 +46,7 @@ class PaymentListPage extends BaseListPage {
     const newPayment = this.newPayment();
     PaymentBackend.addPayment(newPayment)
       .then((res) => {
-          Setting.showMessage("success", `Payment added successfully`);
-          this.props.history.push(`/payments/${newPayment.name}`);
+          this.props.history.push({pathname: `/payments/${newPayment.name}`, mode: "add"});
         }
       )
       .catch(error => {
@@ -152,7 +152,7 @@ class PaymentListPage extends BaseListPage {
         }
       },
       {
-        title: i18next.t("provider:Type"),
+        title: i18next.t("payment:Type"),
         dataIndex: 'type',
         key: 'type',
         width: '110px',
@@ -166,20 +166,20 @@ class PaymentListPage extends BaseListPage {
         }
       },
       {
-        title: i18next.t("payment:Good"),
-        dataIndex: 'good',
-        key: 'good',
+        title: i18next.t("payment:Product"),
+        dataIndex: 'productName',
+        key: 'productName',
         width: '160px',
         sorter: true,
-        ...this.getColumnSearchProps('good'),
+        ...this.getColumnSearchProps('productName'),
       },
       {
-        title: i18next.t("payment:Amount"),
-        dataIndex: 'amount',
-        key: 'amount',
+        title: i18next.t("payment:Price"),
+        dataIndex: 'price',
+        key: 'price',
         width: '120px',
         sorter: true,
-        ...this.getColumnSearchProps('amount'),
+        ...this.getColumnSearchProps('price'),
       },
       {
         title: i18next.t("payment:Currency"),

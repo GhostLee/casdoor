@@ -24,8 +24,10 @@ import (
 )
 
 const (
-	ResponseTypeLogin = "login"
-	ResponseTypeCode  = "code"
+	ResponseTypeLogin   = "login"
+	ResponseTypeCode    = "code"
+	ResponseTypeToken   = "token"
+	ResponseTypeIdToken = "id_token"
 )
 
 type RequestForm struct {
@@ -35,6 +37,8 @@ type RequestForm struct {
 	Username     string `json:"username"`
 	Password     string `json:"password"`
 	Name         string `json:"name"`
+	FirstName    string `json:"firstName"`
+	LastName     string `json:"lastName"`
 	Email        string `json:"email"`
 	Phone        string `json:"phone"`
 	Affiliation  string `json:"affiliation"`
@@ -102,7 +106,7 @@ func (c *ApiController) Signup() {
 	}
 
 	organization := object.GetOrganization(fmt.Sprintf("%s/%s", "admin", form.Organization))
-	msg := object.CheckUserSignup(application, organization, form.Username, form.Password, form.Name, form.Email, form.Phone, form.Affiliation)
+	msg := object.CheckUserSignup(application, organization, form.Username, form.Password, form.Name, form.FirstName, form.LastName, form.Email, form.Phone, form.Affiliation)
 	if msg != "" {
 		c.ResponseError(msg)
 		return
@@ -125,8 +129,6 @@ func (c *ApiController) Signup() {
 			return
 		}
 	}
-
-	userId := fmt.Sprintf("%s/%s", form.Organization, form.Username)
 
 	id := util.GenerateId()
 	if application.GetSignupItemRule("ID") == "Incremental" {
@@ -167,6 +169,15 @@ func (c *ApiController) Signup() {
 		IsDeleted:         false,
 		SignupApplication: application.Name,
 		Properties:        map[string]string{},
+		Karma:             0,
+	}
+
+	if application.GetSignupItemRule("Display name") == "First, last" {
+		if form.FirstName != "" || form.LastName != "" {
+			user.DisplayName = fmt.Sprintf("%s %s", form.FirstName, form.LastName)
+			user.FirstName = form.FirstName
+			user.LastName = form.LastName
+		}
 	}
 
 	affected := object.AddUser(user)
@@ -185,6 +196,12 @@ func (c *ApiController) Signup() {
 	object.DisableVerificationCode(form.Email)
 	object.DisableVerificationCode(checkPhone)
 
+	record := object.NewRecord(c.Ctx)
+	record.Organization = application.Organization
+	record.User = user.Name
+	go object.AddRecord(record)
+
+	userId := fmt.Sprintf("%s/%s", user.Owner, user.Name)
 	util.LogInfo(c.Ctx, "API: [%s] is signed up as new user", userId)
 
 	c.ResponseOk(userId)

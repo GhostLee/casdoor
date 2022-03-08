@@ -38,6 +38,14 @@ func codeToResponse(code *object.Code) *Response {
 	return &Response{Status: "ok", Msg: "", Data: code.Code}
 }
 
+func tokenToResponse(token *object.Token) *Response {
+	if token.AccessToken == "" {
+		return &Response{Status: "error", Msg: "fail to get accessToken", Data: token.AccessToken}
+	}
+	return &Response{Status: "ok", Msg: "", Data: token.AccessToken}
+
+}
+
 // HandleLoggedIn ...
 func (c *ApiController) HandleLoggedIn(application *object.Application, user *object.User, form *RequestForm) (resp *Response) {
 	userId := user.GetId()
@@ -66,6 +74,15 @@ func (c *ApiController) HandleLoggedIn(application *object.Application, user *ob
 			// The prompt page needs the user to be signed in
 			c.SetSessionUsername(userId)
 		}
+	} else if form.Type == ResponseTypeToken || form.Type == ResponseTypeIdToken { //implicit flow
+		if !object.IsGrantTypeValid(form.Type, application.GrantTypes) {
+			resp = &Response{Status: "error", Msg: fmt.Sprintf("error: grant_type: %s is not supported in this application", form.Type), Data: ""}
+		} else {
+			scope := c.Input().Get("scope")
+			token, _ := object.GetTokenByUser(application, user, scope, c.Ctx.Request.Host)
+			resp = tokenToResponse(token)
+		}
+
 	} else {
 		resp = &Response{Status: "error", Msg: fmt.Sprintf("Unknown response type: %s", form.Type)}
 	}
@@ -101,6 +118,7 @@ func (c *ApiController) GetApplicationLogin() {
 	state := c.Input().Get("state")
 
 	msg, application := object.CheckOAuthLogin(clientId, responseType, redirectUri, scope, state)
+	application = object.GetMaskedApplication(application, "")
 	if msg != "" {
 		c.ResponseError(msg, application)
 	} else {
@@ -174,7 +192,7 @@ func (c *ApiController) Login() {
 
 			user = object.GetUserByFields(form.Organization, form.Username)
 			if user == nil {
-				c.ResponseError("No such user.")
+				c.ResponseError(fmt.Sprintf("The user: %s/%s doesn't exist", form.Organization, form.Username))
 				return
 			}
 		} else {
@@ -186,6 +204,11 @@ func (c *ApiController) Login() {
 			resp = &Response{Status: "error", Msg: msg}
 		} else {
 			application := object.GetApplication(fmt.Sprintf("admin/%s", form.Application))
+			if application == nil {
+				c.ResponseError(fmt.Sprintf("The application: %s does not exist", form.Application))
+				return
+			}
+
 			resp = c.HandleLoggedIn(application, user, &form)
 
 			record := object.NewRecord(c.Ctx)
@@ -195,6 +218,11 @@ func (c *ApiController) Login() {
 		}
 	} else if form.Provider != "" {
 		application := object.GetApplication(fmt.Sprintf("admin/%s", form.Application))
+		if application == nil {
+			c.ResponseError(fmt.Sprintf("The application: %s does not exist", form.Application))
+			return
+		}
+
 		organization := object.GetOrganization(fmt.Sprintf("%s/%s", "admin", application.Organization))
 		provider := object.GetProvider(fmt.Sprintf("admin/%s", form.Provider))
 		providerItem := application.GetProviderItem(provider.Name)
@@ -365,6 +393,11 @@ func (c *ApiController) Login() {
 		if c.GetSessionUsername() != "" {
 			// user already signed in to Casdoor, so let the user click the avatar button to do the quick sign-in
 			application := object.GetApplication(fmt.Sprintf("admin/%s", form.Application))
+			if application == nil {
+				c.ResponseError(fmt.Sprintf("The application: %s does not exist", form.Application))
+				return
+			}
+
 			user := c.getCurrentUser()
 			resp = c.HandleLoggedIn(application, user, &form)
 		} else {

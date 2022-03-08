@@ -44,6 +44,7 @@ func (c *ApiController) GetGlobalUsers() {
 		limit := util.ParseInt(limit)
 		paginator := pagination.SetPaginator(c.Ctx, limit, int64(object.GetGlobalUserCount(field, value)))
 		users := object.GetPaginationGlobalUsers(paginator.Offset(), limit, field, value, sortField, sortOrder)
+		users = object.GetMaskedUsers(users)
 		c.ResponseOk(users, paginator.Nums())
 	}
 }
@@ -70,6 +71,7 @@ func (c *ApiController) GetUsers() {
 		limit := util.ParseInt(limit)
 		paginator := pagination.SetPaginator(c.Ctx, limit, int64(object.GetUserCount(owner, field, value)))
 		users := object.GetPaginationUsers(owner, paginator.Offset(), limit, field, value, sortField, sortOrder)
+		users = object.GetMaskedUsers(users)
 		c.ResponseOk(users, paginator.Nums())
 	}
 }
@@ -188,7 +190,7 @@ func (c *ApiController) GetEmailAndPhone() {
 
 	user := object.GetUserByFields(form.Organization, form.Username)
 	if user == nil {
-		c.ResponseError("No such user.")
+		c.ResponseError(fmt.Sprintf("The user: %s/%s doesn't exist", form.Organization, form.Username))
 		return
 	}
 
@@ -224,7 +226,7 @@ func (c *ApiController) SetPassword() {
 
 	requestUserId := c.GetSessionUsername()
 	if requestUserId == "" {
-		c.ResponseError("Please login first.")
+		c.ResponseError("Please login first")
 		return
 	}
 
