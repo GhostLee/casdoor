@@ -136,7 +136,7 @@ func checkLdapUserPassword(user *User, password string) (*User, string) {
 		if err != nil {
 			continue
 		}
-		SearchFilter := fmt.Sprintf("(&(objectClass=user)(uid=%s))", user.Name)
+		SearchFilter := fmt.Sprintf("(&(objectClass=user)(cn=%s))", user.Name)
 		searchReq := goldap.NewSearchRequest(ldapServer.BaseDn,
 			goldap.ScopeWholeSubtree, goldap.NeverDerefAliases, 0, 0, false,
 			SearchFilter, []string{}, nil)
@@ -151,7 +151,7 @@ func checkLdapUserPassword(user *User, password string) (*User, string) {
 			return nil, "Error: multiple accounts with same uid, please check your ldap server"
 		}
 		if lunan.AuthEnabled() {
-			uid := searchResult.Entries[0].GetAttributeValue("uid")
+			uid := searchResult.Entries[0].GetAttributeValue("cn")
 			if err := lunan.Auth(context.Background(), uid, password); err == nil {
 				ldapLoginSuccess = true
 				break
