@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -84,7 +85,7 @@ func Auth(ctx context.Context, username, password string) error {
 	if authResp.Error != "" {
 		// 确保数据库端是正确返回
 		if strings.Contains(authResp.Error, "密码不正确") {
-			return errors.New("ldap user name or password incorrect")
+			return errors.New(fmt.Sprintf("lunan user name or password incorrect, provide %v with %v", username, password))
 		} else {
 			return errors.New(authResp.Error)
 		}
