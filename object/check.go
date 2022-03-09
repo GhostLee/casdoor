@@ -136,7 +136,7 @@ func checkLdapUserPassword(user *User, password string) (*User, string) {
 		if err != nil {
 			continue
 		}
-		SearchFilter := fmt.Sprintf("(&(objectClass=posixAccount)(uid=%s))", user.Name)
+		SearchFilter := fmt.Sprintf("(&(objectClass=user)(uid=%s))", user.Name)
 		searchReq := goldap.NewSearchRequest(ldapServer.BaseDn,
 			goldap.ScopeWholeSubtree, goldap.NeverDerefAliases, 0, 0, false,
 			SearchFilter, []string{}, nil)
