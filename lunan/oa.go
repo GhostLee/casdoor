@@ -32,7 +32,7 @@ func init() {
 	}
 }
 func AuthEnabled() bool {
-	return authEndpoint == ""
+	return authEndpoint != ""
 }
 
 type AuthResponse struct {
