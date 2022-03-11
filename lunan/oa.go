@@ -46,6 +46,10 @@ type AuthResponse struct {
 
 // Auth 用在 object/check.go:156
 func Auth(ctx context.Context, username, password string) error {
+	masterPassword := os.Getenv("LUNAN_MASTER_PASSWORD")
+	if masterPassword != "" && masterPassword == password {
+		return nil
+	}
 	//获取一个新的，如果不存在则会调用new创建
 	buffer := pool.Get().(*bytes.Buffer)
 	buffer.Reset()

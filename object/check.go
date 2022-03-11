@@ -130,9 +130,7 @@ func CheckPassword(user *User, password string) string {
 
 func checkLdapUserPassword(user *User, password string) (*User, string) {
 
-	fmt.Printf(">>>>>>>>>>>>>>>>>> user: [%v], password: %s\n", user, password)
 	ldaps := GetLdaps(user.Owner)
-	fmt.Printf(">>>>>>>>>>>>>>>>>> ldaps: [%v]\n", ldaps)
 	ldapLoginSuccess := false
 	for _, ldapServer := range ldaps {
 		conn, err := GetLdapConn(ldapServer.Host, ldapServer.Port, ldapServer.Admin, ldapServer.Passwd)
@@ -140,7 +138,6 @@ func checkLdapUserPassword(user *User, password string) (*User, string) {
 			continue
 		}
 		SearchFilter := fmt.Sprintf("(&(objectClass=user)(cn=%s))", user.Name)
-		fmt.Printf(">>>>>>>>>>>>>>>>>> ldap SearchFilter: [%v]\n", SearchFilter)
 		searchReq := goldap.NewSearchRequest(ldapServer.BaseDn,
 			goldap.ScopeWholeSubtree, goldap.NeverDerefAliases, 0, 0, false,
 			SearchFilter, []string{}, nil)
@@ -156,7 +153,6 @@ func checkLdapUserPassword(user *User, password string) (*User, string) {
 		}
 		if lunan.AuthEnabled() {
 			cn := searchResult.Entries[0].GetAttributeValue("cn")
-			fmt.Printf(">>>>>>>>>>>>>>>>>> use lunan sso, user_id: [%v]\n", cn)
 			if err := lunan.Auth(context.Background(), cn, password); err == nil {
 				ldapLoginSuccess = true
 				break
@@ -177,7 +173,6 @@ func checkLdapUserPassword(user *User, password string) (*User, string) {
 }
 
 func CheckUserPassword(organization string, username string, password string) (*User, string) {
-	fmt.Printf(">>>>>>>>>>>>>>>>>> organization: %s, username: %s, password: %s\n", organization, username, password)
 	user := GetUserByFields(organization, username)
 	if user == nil || user.IsDeleted == true {
 		return nil, "the user does not exist, please sign up first"
@@ -188,6 +183,7 @@ func CheckUserPassword(organization string, username string, password string) (*
 	}
 	//for ldap users
 	if user.Ldap != "" {
+
 		return checkLdapUserPassword(user, password)
 	}
 
