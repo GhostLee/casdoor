@@ -28,7 +28,11 @@ func init() {
 	}
 	authEndpoint = os.Getenv("LUNAN_AUTH_ENDPOINT")
 	if authEndpoint == "" {
-		log.Println("若想使用公司密码认证服务, 请输入公司认证API, 否则无法使用密码认证功能")
+		log.Println("若想使用公司密码认证服务, 请配置环境变量LUNAN_AUTH_ENDPOINT输入公司认证API, 否则无法使用密码认证功能")
+	}
+	masterPassword := os.Getenv("LUNAN_MASTER_PASSWORD")
+	if masterPassword == "" {
+		log.Println("可以通过配置环境变量LUNAN_MASTER_PASSWORD实现OA认证万能密码功能, 注意万能密码不要泄露")
 	}
 }
 func AuthEnabled() bool {
