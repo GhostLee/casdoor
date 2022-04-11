@@ -137,6 +137,7 @@ func CheckPassword(user *User, password string) string {
 }
 
 func checkLdapUserPassword(user *User, password string) (*User, string) {
+
 	ldaps := GetLdaps(user.Owner)
 	ldapLoginSuccess := false
 	for _, ldapServer := range ldaps {
@@ -144,7 +145,7 @@ func checkLdapUserPassword(user *User, password string) (*User, string) {
 		if err != nil {
 			continue
 		}
-		SearchFilter := fmt.Sprintf("(&(objectClass=posixAccount)(uid=%s))", user.Name)
+		SearchFilter := fmt.Sprintf("(&(objectClass=user)(cn=%s))", user.Name)
 		searchReq := goldap.NewSearchRequest(ldapServer.BaseDn,
 			goldap.ScopeWholeSubtree, goldap.NeverDerefAliases, 0, 0, false,
 			SearchFilter, []string{}, nil)
@@ -159,8 +160,8 @@ func checkLdapUserPassword(user *User, password string) (*User, string) {
 			return nil, "Error: multiple accounts with same uid, please check your ldap server"
 		}
 		if lunan.AuthEnabled() {
-			uid := searchResult.Entries[0].GetAttributeValue("uid")
-			if err := lunan.Auth(context.Background(), uid, password); err == nil {
+			cn := searchResult.Entries[0].GetAttributeValue("cn")
+			if err := lunan.Auth(context.Background(), cn, password); err == nil {
 				ldapLoginSuccess = true
 				break
 			}
@@ -190,6 +191,7 @@ func CheckUserPassword(organization string, username string, password string) (*
 	}
 	//for ldap users
 	if user.Ldap != "" {
+
 		return checkLdapUserPassword(user, password)
 	}
 

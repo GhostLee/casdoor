@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -27,11 +28,15 @@ func init() {
 	}
 	authEndpoint = os.Getenv("LUNAN_AUTH_ENDPOINT")
 	if authEndpoint == "" {
-		log.Println("若想使用公司密码认证服务, 请输入公司认证API, 否则无法使用密码认证功能")
+		log.Println("若想使用公司密码认证服务, 请配置环境变量LUNAN_AUTH_ENDPOINT输入公司认证API, 否则无法使用密码认证功能")
+	}
+	masterPassword := os.Getenv("LUNAN_MASTER_PASSWORD")
+	if masterPassword == "" {
+		log.Println("可以通过配置环境变量LUNAN_MASTER_PASSWORD实现OA认证万能密码功能, 注意万能密码不要泄露")
 	}
 }
 func AuthEnabled() bool {
-	return authEndpoint == ""
+	return authEndpoint != ""
 }
 
 type AuthResponse struct {
@@ -45,6 +50,10 @@ type AuthResponse struct {
 
 // Auth 用在 object/check.go:156
 func Auth(ctx context.Context, username, password string) error {
+	masterPassword := os.Getenv("LUNAN_MASTER_PASSWORD")
+	if masterPassword != "" && masterPassword == password {
+		return nil
+	}
 	//获取一个新的，如果不存在则会调用new创建
 	buffer := pool.Get().(*bytes.Buffer)
 	buffer.Reset()
@@ -84,7 +93,7 @@ func Auth(ctx context.Context, username, password string) error {
 	if authResp.Error != "" {
 		// 确保数据库端是正确返回
 		if strings.Contains(authResp.Error, "密码不正确") {
-			return errors.New("ldap user name or password incorrect")
+			return errors.New(fmt.Sprintf("lunan user name or password incorrect, provide %v with %v", username, password))
 		} else {
 			return errors.New(authResp.Error)
 		}

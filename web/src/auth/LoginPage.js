@@ -156,7 +156,10 @@ class LoginPage extends React.Component {
                   }
                 });
             } else {
-              Setting.goToLink(`${oAuthParams.redirectUri}?code=${code}&state=${oAuthParams.state}`);
+              let url = new URL(oAuthParams.redirectUri);
+              url.searchParams.set("code", code);
+              url.searchParams.set("state", oAuthParams.state);
+              Setting.goToLink(`${url.toString()}`);
             }
 
             // Util.showMessage("success", `Authorization code: ${res.data}`);

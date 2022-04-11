@@ -17,6 +17,8 @@ package object
 import (
 	"errors"
 	"fmt"
+	"github.com/casdoor/casdoor/lunan"
+	"github.com/casdoor/casdoor/lunan/guid"
 	"strings"
 
 	"github.com/casdoor/casdoor/util"
@@ -189,15 +191,20 @@ func (l *ldapConn) GetLdapUsers(baseDn string) ([]ldapUser, error) {
 		for _, attribute := range entry.Attributes {
 			switch attribute.Name {
 			case "objectGUID":
-				ldapUserItem.UidNumber = attribute.Values[0]
+				var ret [16]byte
+				copy(ret[:], attribute.ByteValues[0])
+				gid := guid.Guid(ret)
+				ldapUserItem.UidNumber = gid.String()
 			case "name":
+				ldapUserItem.UidNumber = attribute.Values[0]
 				ldapUserItem.Uid = attribute.Values[0]
 			case "cn":
 				ldapUserItem.Cn = attribute.Values[0]
 			case "departmentNumber":
 				ldapUserItem.GidNumber = attribute.Values[0]
 			case "objectSid":
-				ldapUserItem.Uuid = attribute.Values[0]
+				sid := lunan.SID(attribute.ByteValues[0])
+				ldapUserItem.Uuid = sid.String()
 			case "mail":
 				ldapUserItem.Mail = attribute.Values[0]
 			case "email":
