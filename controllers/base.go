@@ -61,6 +61,7 @@ func (c *ApiController) GetSessionUsername() string {
 		sessionData.ExpireTime < time.Now().Unix() {
 		c.SetSessionUsername("")
 		c.SetSessionData(nil)
+		c.SetSessionAccessToken("")
 		return ""
 	}
 
@@ -79,6 +80,7 @@ func (c *ApiController) GetSessionOidc() (string, string) {
 		sessionData.ExpireTime < time.Now().Unix() {
 		c.SetSessionUsername("")
 		c.SetSessionData(nil)
+		c.SetSessionAccessToken("")
 		return "", ""
 	}
 	scopeValue := c.GetSession("scope")
@@ -97,6 +99,32 @@ func (c *ApiController) GetSessionOidc() (string, string) {
 // SetSessionUsername ...
 func (c *ApiController) SetSessionUsername(user string) {
 	c.SetSession("username", user)
+}
+
+// GetSessionAccessToken ...
+func (c *ApiController) GetSessionAccessToken() string {
+	// check if user session expired
+	sessionData := c.GetSessionData()
+	if sessionData != nil &&
+		sessionData.ExpireTime != 0 &&
+		sessionData.ExpireTime < time.Now().Unix() {
+		c.SetSessionUsername("")
+		c.SetSessionData(nil)
+		c.SetSessionAccessToken("")
+		return ""
+	}
+
+	accessToken := c.GetSession("access_token")
+	if accessToken == nil {
+		return ""
+	}
+
+	return accessToken.(string)
+}
+
+// SetSessionAccessToken ...
+func (c *ApiController) SetSessionAccessToken(accessToken string) {
+	c.SetSession("access_token", accessToken)
 }
 
 // GetSessionData ...

@@ -180,8 +180,9 @@ func (c *ApiController) GetOAuthToken() {
 		clientId, clientSecret, _ = c.Ctx.Request.BasicAuth()
 	}
 	host := c.Ctx.Request.Host
-
-	c.Data["json"] = object.GetOAuthToken(grantType, clientId, clientSecret, code, verifier, scope, username, password, host)
+	token := object.GetOAuthToken(grantType, clientId, clientSecret, code, verifier, scope, username, password, host)
+	c.SetSessionAccessToken(token.AccessToken)
+	c.Data["json"] = token
 	c.ServeJSON()
 }
 
@@ -203,8 +204,9 @@ func (c *ApiController) RefreshToken() {
 	clientId := c.Input().Get("client_id")
 	clientSecret := c.Input().Get("client_secret")
 	host := c.Ctx.Request.Host
-
-	c.Data["json"] = object.RefreshToken(grantType, refreshToken, scope, clientId, clientSecret, host)
+	token := object.RefreshToken(grantType, refreshToken, scope, clientId, clientSecret, host)
+	c.SetSessionAccessToken(token.AccessToken)
+	c.Data["json"] = token
 	c.ServeJSON()
 }
 
@@ -219,6 +221,9 @@ func (c *ApiController) RefreshToken() {
 // @router /login/oauth/logout [get]
 func (c *ApiController) TokenLogout() {
 	token := c.Input().Get("id_token_hint")
+	if token == "" {
+		token = c.GetSessionAccessToken()
+	}
 	flag, application := object.DeleteTokenByAceessToken(token)
 	redirectUri := c.Input().Get("post_logout_redirect_uri")
 	state := c.Input().Get("state")
