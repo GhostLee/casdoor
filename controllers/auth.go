@@ -80,6 +80,7 @@ func (c *ApiController) HandleLoggedIn(application *object.Application, user *ob
 		} else {
 			scope := c.Input().Get("scope")
 			token, _ := object.GetTokenByUser(application, user, scope, c.Ctx.Request.Host)
+			c.SetSessionAccessToken(token.AccessToken)
 			resp = tokenToResponse(token)
 		}
 
