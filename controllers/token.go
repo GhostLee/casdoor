@@ -224,15 +224,23 @@ func (c *ApiController) TokenLogout() {
 	if token == "" {
 		token = c.GetSessionAccessToken()
 	}
-	flag, application := object.DeleteTokenByAceessToken(token)
-	redirectUri := c.Input().Get("post_logout_redirect_uri")
-	state := c.Input().Get("state")
-	if application != nil && object.CheckRedirectUriValid(application, redirectUri) {
+	if token != "" {
+		flag, application := object.DeleteTokenByAceessToken(token)
+		redirectUri := c.Input().Get("post_logout_redirect_uri")
+		state := c.Input().Get("state")
+		if application != nil && object.CheckRedirectUriValid(application, redirectUri) {
+			c.Ctx.Redirect(http.StatusFound, redirectUri+"?state="+state)
+			return
+		}
+		c.Data["json"] = wrapActionResponse(flag)
+		c.ServeJSON()
+	} else {
+		// 没有token的情况不做内部处理 直接返回
+		redirectUri := c.Input().Get("post_logout_redirect_uri")
+		state := c.Input().Get("state")
 		c.Ctx.Redirect(http.StatusFound, redirectUri+"?state="+state)
 		return
 	}
-	c.Data["json"] = wrapActionResponse(flag)
-	c.ServeJSON()
 }
 
 // IntrospectToken
